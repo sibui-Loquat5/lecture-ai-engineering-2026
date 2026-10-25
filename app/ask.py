@@ -21,9 +21,13 @@ from app.config import MODEL, api_error_message, get_api_key
 DEFAULT_QUESTION = "AIE2026の講座の宿題にある「3レベル」とは何ですか？"
 
 
-def ask(question: str) -> str:
+def ask(question: str, temperature: float) -> str:
     client = genai.Client(api_key=get_api_key())
-    response = client.models.generate_content(model=MODEL, contents=question)
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=question,
+        config=genai.types.GenerateContentConfig(temperature=temperature),
+    )
 
     usage = response.usage_metadata
     if usage is not None:
@@ -38,12 +42,14 @@ def ask(question: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description="素のLLMに質問する")
     parser.add_argument("question", nargs="?", default=DEFAULT_QUESTION)
+    parser.add_argument("--temperature", default=None, type=float)
     args = parser.parse_args()
 
     print(f"[model] {MODEL}")
     print(f"[質問] {args.question}\n")
+    print(f"[temperature] {args.temperature}\n")
     try:
-        print(ask(args.question))
+        print(ask(args.question, args.temperature))
     except errors.APIError as e:
         print(api_error_message(e.code, e.message))
         raise SystemExit(1)
